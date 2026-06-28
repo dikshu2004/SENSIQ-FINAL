@@ -1,0 +1,20 @@
+<% if (success && success.length) { %>
+  <div class="cover">
+    <div class="alert flash-banner" role="alert" style="background:#d1fae5;color:#065f46;padding:1rem 1.2rem;display:flex;align-items:center;gap:.8rem">
+      <i class="fa-solid fa-circle-check" style="font-size:1.2rem"></i>
+      <span style="flex:1"><%= success[0] %></span>
+      <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#065f46;font-size:1.2rem" aria-label="Close">&times;</button>
+    </div>
+  </div>
+<% } %>
+
+<% if (error && error.length) { %>
+  <div class="cover">
+    <div class="alert flash-banner" role="alert" style="background:#fee2e2;color:#991b1b;padding:1rem 1.2rem;display:flex;align-items:center;gap:.8rem">
+      <i class="fa-solid fa-circle-exclamation" style="font-size:1.2rem"></i>
+      <span style="flex:1"><%= error[0] %></span>
+      <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#991b1b;font-size:1.2rem" aria-label="Close">&times;</button>
+    </div>
+  </div>
+<% } %>
+

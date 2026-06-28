@@ -1,0 +1,203 @@
+<% layout("/layouts/boilerplate") %>
+
+<%
+  const isMuteType        = ["mute","deaf_mute","mute_visually_impaired"].includes(type);
+  const isViType          = ["visually_impaired","mute_visually_impaired"].includes(type);
+  const isDeafType        = ["deaf","deaf_mute"].includes(type);
+  const needsBothAudio    = isMuteType || isViType;
+  const isGestureCategory = ["deaf", "mute", "deaf_mute"].includes(type);
+%>
+
+<section class="category-hero">
+  <div class="cover">
+    <div class="category-hero-inner">
+      <div class="category-hero-icon"><i class="fa-solid <%= meta.icon %>"></i></div>
+      <div>
+        <h1><%= meta.label %></h1>
+        <p><%= meta.desc %></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dash-section">
+  <div class="cover">
+    <% if (isGestureCategory) { %>
+      <!-- Real-time Sign Language Recognition Panel -->
+      <div class="tool-panel webcam-recognition-panel reveal visible" style="margin-bottom: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); position: relative; overflow: hidden;">
+        <!-- Left: Webcam feed and canvas overlay -->
+        <div class="webcam-col" style="display: flex; flex-direction: column; gap: 0.8rem; min-width: 0;">
+          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-hands-asl-interpreting" style="color: var(--gold-deep)"></i> Webcam Gesture Navigation Controls
+          </h3>
+          <div class="webcam-container" style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;">
+            <video id="webcamVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+            <canvas id="webcamCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1);"></canvas>
+            
+            <!-- Status overlay -->
+            <div id="webcamStatus" style="position: absolute; inset: 0; background: rgba(7, 17, 31, 0.85); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; text-align: center; transition: opacity 0.3s ease; z-index: 10;">
+              <div class="status-spinner"><i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--gold)"></i></div>
+              <div id="webcamStatusText" style="font-weight: 500; font-size: 0.95rem;">Requesting camera access and loading AI model...</div>
+              <button id="retryCameraBtn" class="tool-btn tool-btn-primary" style="display: none; font-size: 0.82rem; padding: 0.4rem 1rem;"><i class="fa-solid fa-rotate"></i> Retry Camera</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Recognition Output -->
+        <div class="output-col" style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; min-width: 0;">
+          <div style="display: flex; flex-direction: column; gap: 0.8rem; height: 100%;">
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 0.5rem; justify-content: space-between;">
+              <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-comment-dots" style="color: var(--gold-deep)"></i> Recognized Gesture Action</span>
+              <span id="detectionConfidence" style="font-size: 0.78rem; font-weight: 600; color: var(--text-soft); background: var(--blue-soft); padding: 0.2rem 0.6rem; border-radius: 99px; display: none;">Confidence: 0%</span>
+            </h3>
+
+            <!-- Real-time feedback bar -->
+            <div class="realtime-status-bar" style="display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 0.6rem 1rem; border-radius: 10px; border: 1px solid var(--line); font-size: 0.9rem; font-weight: 600;">
+              <span id="liveDetectionWord" style="color: var(--blue);">Detecting: Standing by...</span>
+              <div class="progress-bar-mini" id="gestureHoldProgress" style="width: 100px; display: none; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; margin-left: 0.5rem;">
+                <div class="fill" style="width: 0%; height: 100%; background: var(--blue); transition: width 0.1s linear;"></div>
+              </div>
+            </div>
+
+            <!-- Accumulated recognized text box -->
+            <div id="recognizedTextBox" style="flex: 1; min-height: 120px; background: var(--card-bg-alt); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; overflow-y: auto; font-size: 1.15rem; color: var(--text); line-height: 1.6; word-break: break-word;">
+              <span class="placeholder-text" style="color: var(--text-soft); font-style: italic; font-size: 0.95rem;">Triggered actions will log here. Hold a gesture for 1.5s to execute its command.</span>
+            </div>
+
+            <!-- Gesture Navigation Cheat Sheet -->
+            <details style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; padding: 0.5rem 0.8rem; font-size: 0.82rem; margin-top: 0.2rem; width: 100%;">
+              <summary style="font-weight: 600; cursor: pointer; color: var(--text-soft); display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;">
+                <i class="fa-solid fa-circle-question" style="color: var(--blue)"></i> View Gesture Commands Cheat Sheet
+              </summary>
+              <div id="cheatSheetGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; padding-top: 0.5rem; color: var(--text); line-height: 1.4;">
+                <div>🖐️ <strong>HELLO</strong>: Home Page</div>
+                <div>✌️ <strong>PEACE</strong>: About Page</div>
+                <div>🤙 <strong>CALL ME</strong>: Contact Page</div>
+                <div>☝️ <strong>POINT</strong>: Scroll Courses</div>
+                <div>🤟 <strong>THREE</strong>: Toggle Categories</div>
+                <div>👍 <strong>THUMBS UP</strong>: Login Page</div>
+                <div>👎 <strong>THUMBS DOWN</strong>: Logout Page</div>
+                <div>🤘 <strong>ROCK</strong>: History Back</div>
+                <div>🖖 <strong>FOUR</strong>: Select Next (Cycle)</div>
+                <div>👌 <strong>OK</strong>: Select Next (Cycle)</div>
+                <div>🤟 <strong>ILY</strong>: Confirm Selection</div>
+                <div>🖐️ <strong>NO (3-fingers)</strong>: Open First Course</div>
+                <div>✊ <strong>YES/FIST</strong>: Close Dropdown</div>
+              </div>
+            </details>
+          </div>
+
+          <!-- Controls -->
+          <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+            <button class="tool-btn tool-btn-primary" id="toggleWebcamBtn" style="font-size: 0.85rem; padding: 0.5rem 1rem;"><i class="fa-solid fa-video-slash"></i> Stop Camera</button>
+            <button class="tool-btn tool-btn-outline" id="clearTextBtn" style="font-size: 0.85rem; padding: 0.5rem 1rem;"><i class="fa-solid fa-eraser"></i> Clear Log</button>
+          </div>
+        </div>
+      </div>
+      
+      <style>
+        @media (max-width: 768px) {
+          .webcam-recognition-panel {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      </style>
+
+      <!-- Dynamic Gesture Navigation Guide Card -->
+      <div id="gestureGuideCard" class="tool-panel reveal visible" style="margin-bottom: 2.5rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);">
+        <h3 style="margin: 0 0 1.2rem 0; font-size: 1.1rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-hand-pointer" style="color: var(--blue)"></i> Sign Language Gesture Guide
+        </h3>
+        <div id="gestureGuideList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+          <!-- Filled dynamically by sign-recognition.js -->
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Tools relevant to this category -->
+    <h2><i class="fa-solid fa-toolbox" style="color:var(--blue)"></i> Available Assistive Tools</h2>
+    <div class="dash-tools" style="margin-bottom:2.5rem">
+
+
+      <!-- Text to Sign Language (Deaf / Deaf-Mute) -->
+      <% if (isDeafType) { %>
+        <a href="/tools/text-to-sign" class="dash-tool">
+          <div class="dash-tool-icon t2s"><i class="fa-solid fa-hands-asl-interpreting"></i></div>
+          <div><h4>Text to Sign Language</h4><p>Convert text to ISL fingerspelling</p></div>
+        </a>
+      <% } %>
+
+      <!-- Text to Speech (Mute + Visually Impaired + combos) -->
+      <% if (needsBothAudio) { %>
+        <a href="/tools/text-to-speech" class="dash-tool">
+          <div class="dash-tool-icon tts"><i class="fa-solid fa-volume-high"></i></div>
+          <div><h4>Text to Speech</h4><p>Listen to content read aloud</p></div>
+        </a>
+      <% } %>
+
+      <!-- Speech to Text (Mute + Visually Impaired + combos) -->
+      <% if (needsBothAudio) { %>
+        <a href="/tools/speech-to-text" class="dash-tool">
+          <div class="dash-tool-icon stt"><i class="fa-solid fa-microphone"></i></div>
+          <div><h4>Speech to Text</h4><p>Speak to interact without typing</p></div>
+        </a>
+      <% } %>
+
+      <!-- Fallback: unknown category → show all tools -->
+      <% if (!isDeafType && !needsBothAudio) { %>
+        <a href="/tools/speech-to-text" class="dash-tool">
+          <div class="dash-tool-icon stt"><i class="fa-solid fa-microphone"></i></div>
+          <div><h4>Speech to Text</h4><p>Convert voice to text</p></div>
+        </a>
+        <a href="/tools/text-to-speech" class="dash-tool">
+          <div class="dash-tool-icon tts"><i class="fa-solid fa-volume-high"></i></div>
+          <div><h4>Text to Speech</h4><p>Listen to content</p></div>
+        </a>
+        <a href="/tools/text-to-sign" class="dash-tool">
+          <div class="dash-tool-icon t2s"><i class="fa-solid fa-hands-asl-interpreting"></i></div>
+          <div><h4>Text to Sign</h4><p>ISL fingerspelling</p></div>
+        </a>
+      <% } %>
+    </div>
+
+    <h2><i class="fa-solid fa-graduation-cap" style="color:var(--blue)"></i> Courses</h2>
+    <% if (courses.length === 0) { %>
+      <p style="color:var(--text-soft)">No courses available for this category yet.</p>
+    <% } else { %>
+      <div class="course-grid">
+        <% courses.forEach(course => {
+          const pct = progressMap[course._id.toString()] || 0;
+        %>
+          <div class="course-card reveal">
+            <div class="course-card-icon"><i class="fa-solid <%= course.icon %>"></i></div>
+            <h3><%= course.title %></h3>
+            <p><%= course.description.substring(0, 120) %>...</p>
+            <div class="course-card-meta">
+              <span><i class="fa-solid fa-clock"></i> <%= course.estimatedDuration %></span>
+              <span><i class="fa-solid fa-signal"></i> <%= course.difficulty %></span>
+              <span><i class="fa-solid fa-book"></i> <%= course.lessons.length %> lessons</span>
+            </div>
+            <div class="progress-bar-mini">
+              <div class="fill" style="width:<%= pct %>%"></div>
+            </div>
+            <a href="/category/<%= type %>/course/<%= course._id %>" class="card-btn">
+              <%= pct > 0 ? "Continue" : "Start Learning" %> <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<% if (isGestureCategory) { %>
+  <!-- MediaPipe dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  
+  <!-- Custom Sign Language Recognition script -->
+  <script src="/js/sign-recognition.js"></script>
+<% } %>
+
+

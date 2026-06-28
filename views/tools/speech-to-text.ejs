@@ -1,0 +1,295 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="tool-hero">
+  <div class="cover">
+    <span class="eyebrow eyebrow-dark">Assistive Tool</span>
+    <h1><i class="fa-solid fa-microphone"></i> Speech to Text</h1>
+    <p>Speak into your microphone — your words are transcribed using AI.</p>
+  </div>
+</section>
+
+<section class="tool-workspace">
+  <div class="tool-card">
+
+    <!-- Mic-denied banner -->
+    <div id="bannerPerm" style="
+      display:none;
+      background:linear-gradient(135deg,#fff3cd,#fef9c3);
+      border:1.5px solid #fbbf24;border-radius:14px;
+      padding:1rem 1.3rem;margin-bottom:1.2rem;
+      font-size:.9rem;color:#7c4a00;line-height:1.7;
+    ">
+      <strong><i class="fa-solid fa-triangle-exclamation" style="color:#d97706"></i> Microphone Blocked — Fix in 3 steps</strong>
+      <ol style="margin:.4rem 0 0 1.2rem;padding:0">
+        <li>Click the <strong>🔒 lock icon</strong> in the address bar (left of the URL).</li>
+        <li>Set <strong>Microphone → Allow</strong>.</li>
+        <li><strong>Refresh the page (F5)</strong> and click the mic again.</li>
+      </ol>
+      <p style="margin:.6rem 0 0;font-size:.83rem;color:#92400e">
+        <i class="fa-solid fa-lightbulb"></i>
+        In Edge: address bar → 🔒 → Permissions for this site → Microphone → Allow.
+      </p>
+    </div>
+
+    <!-- No-mic banner -->
+    <div id="bannerNoMic" style="
+      display:none;
+      background:linear-gradient(135deg,#fee2e2,#fecaca);
+      border:1.5px solid #f87171;border-radius:14px;
+      padding:1rem 1.3rem;margin-bottom:1.2rem;
+      font-size:.9rem;color:#7f1d1d;line-height:1.7;
+    ">
+      <strong><i class="fa-solid fa-microphone-slash" style="color:#ef4444"></i> No Microphone Detected</strong><br>
+      Connect a microphone or headset and try again. If using a built-in mic, make sure it is not muted in Windows sound settings.
+    </div>
+
+    <!-- Mic button -->
+    <div style="text-align:center;margin-bottom:1.4rem">
+      <button class="mic-btn" id="sttMicBtn" aria-label="Start recording">
+        <i class="fa-solid fa-microphone" id="sttIcon"></i>
+      </button>
+
+      <!-- Status line -->
+      <p id="sttStatus" style="
+        font-size:.95rem;margin-top:.9rem;
+        font-weight:600;min-height:1.5em;
+        color:var(--text);transition:color .25s;
+      ">Click mic → speak → click Stop to transcribe</p>
+    </div>
+
+    <!-- Wave animation (visible while recording) -->
+    <div id="sttWave" style="display:none;justify-content:center;align-items:flex-end;gap:4px;height:28px;margin-bottom:.9rem">
+      <% for(var i=0;i<9;i++){ %>
+      <span style="display:inline-block;width:4px;background:linear-gradient(to top,#3b82f6,#93c5fd);border-radius:3px;
+                   animation:sttW .85s ease-in-out infinite;animation-delay:<%= (i*0.09).toFixed(2) %>s"></span>
+      <% } %>
+    </div>
+
+    <!-- Transcribing spinner (visible while AI processes) -->
+    <div id="sttSpinner" style="display:none;text-align:center;margin-bottom:.9rem">
+      <i class="fa-solid fa-spinner fa-spin" style="font-size:1.4rem;color:var(--blue)"></i>
+      <span style="margin-left:.5rem;font-size:.92rem;color:var(--text-soft)">AI is transcribing…</span>
+    </div>
+
+    <!-- Language badge -->
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem">
+      <i class="fa-solid fa-globe" style="color:var(--blue)"></i>
+      <span style="font-size:.88rem;color:var(--text-soft)">Language:</span>
+      <span style="background:var(--blue);color:#fff;padding:.22rem .8rem;border-radius:20px;font-size:.82rem;font-weight:700">
+        🇺🇸 English (US)
+      </span>
+      <span style="font-size:.78rem;color:var(--text-soft);margin-left:.3rem">
+        <i class="fa-solid fa-robot"></i> Powered by Gemini AI
+      </span>
+    </div>
+
+    <!-- Output box -->
+    <div class="stt-display" id="sttDisplay">
+      <span class="stt-placeholder">Your speech will appear here…</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="tool-actions">
+      <button class="tool-btn tool-btn-outline" id="sttCopy">
+        <i class="fa-solid fa-copy"></i> Copy Text
+      </button>
+      <button class="tool-btn tool-btn-outline" id="sttClear">
+        <i class="fa-solid fa-trash"></i> Clear
+      </button>
+      <button class="tool-btn tool-btn-success" id="sttDownload">
+        <i class="fa-solid fa-download"></i> Download
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<!-- Styles -->
+<style>
+@keyframes sttW {
+  0%,100%{ height:4px  }
+  50%    { height:22px }
+}
+.stt-final { color:var(--text); white-space:pre-wrap; line-height:1.7; }
+
+.mic-btn.recording {
+  background:#ef4444 !important;
+  animation:micPulse 1.4s ease-in-out infinite;
+}
+@keyframes micPulse {
+  0%,100%{ box-shadow:0 0 0 0   rgba(239,68,68,.5) }
+  50%    { box-shadow:0 0 0 18px rgba(239,68,68,0)  }
+}
+.mic-btn.transcribing {
+  background: var(--blue) !important;
+  cursor: not-allowed;
+  opacity: .7;
+}
+</style>
+
+<!-- Page script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  var micBtn      = document.getElementById("sttMicBtn");
+  var micIcon     = document.getElementById("sttIcon");
+  var display     = document.getElementById("sttDisplay");
+  var statusEl    = document.getElementById("sttStatus");
+  var waveEl      = document.getElementById("sttWave");
+  var spinnerEl   = document.getElementById("sttSpinner");
+  var bannerPerm  = document.getElementById("bannerPerm");
+  var bannerNoMic = document.getElementById("bannerNoMic");
+
+  var recording     = false;
+  var transcribing  = false;
+
+  /* ── Helpers ── */
+  function hideBanners() {
+    bannerPerm.style.display  = "none";
+    bannerNoMic.style.display = "none";
+  }
+
+  function setStatus(msg, color) {
+    statusEl.textContent = msg;
+    statusEl.style.color = color || "var(--text)";
+  }
+
+  function setRecording(on) {
+    recording = on;
+    if (on) {
+      micBtn.classList.add("recording");
+      micBtn.classList.remove("transcribing");
+      micIcon.className    = "fa-solid fa-stop";
+      waveEl.style.display = "flex";
+      spinnerEl.style.display = "none";
+    } else {
+      micBtn.classList.remove("recording");
+      micIcon.className    = "fa-solid fa-microphone";
+      waveEl.style.display = "none";
+    }
+  }
+
+  function setTranscribing(on) {
+    transcribing = on;
+    if (on) {
+      micBtn.classList.add("transcribing");
+      micBtn.disabled = true;
+      spinnerEl.style.display = "flex";
+    } else {
+      micBtn.classList.remove("transcribing");
+      micBtn.disabled = false;
+      spinnerEl.style.display = "none";
+    }
+  }
+
+  /* ── Browser check — need MediaRecorder ── */
+  if (!window.SensiQSTT) {
+    setStatus("⚠️ Your browser does not support audio recording. Please use Chrome or Edge.", "#ef4444");
+    micBtn.disabled = true;
+    return;
+  }
+
+  /* ── Engine status callback ── */
+  function onEngineStatus(msg, isError) {
+    if (msg === "mic-denied") {
+      hideBanners();
+      bannerPerm.style.display = "block";
+      setStatus("❌ Microphone blocked. See fix steps above.", "#ef4444");
+      setRecording(false);
+      setTranscribing(false);
+      return;
+    }
+    if (msg === "mic-missing") {
+      hideBanners();
+      bannerNoMic.style.display = "block";
+      setStatus("❌ No microphone found.", "#ef4444");
+      setRecording(false);
+      setTranscribing(false);
+      return;
+    }
+
+    /* Transcribing message from engine */
+    if (msg.indexOf("Transcribing") !== -1) {
+      setTranscribing(true);
+      setStatus(msg, "var(--blue)");
+      return;
+    }
+
+    /* Done message from engine */
+    if (msg.indexOf("Done") !== -1 || msg.indexOf("complete") !== -1) {
+      setTranscribing(false);
+      setStatus(msg, "#16a34a");
+      return;
+    }
+
+    /* Too short warning */
+    if (isError && msg.indexOf("short") !== -1) {
+      setTranscribing(false);
+      setStatus(msg, "#d97706");
+      return;
+    }
+
+    /* Generic */
+    setStatus(msg, isError ? "#ef4444" : "var(--text)");
+    if (isError) {
+      setRecording(false);
+      setTranscribing(false);
+    }
+  }
+
+  /* ── Mic button ── */
+  micBtn.addEventListener("click", function () {
+    if (transcribing) return; /* block during AI processing */
+
+    if (!recording) {
+      display.innerHTML = "";
+      hideBanners();
+      setStatus("🔓 Requesting microphone…");
+      window.SensiQSTT.start(display, onEngineStatus);
+      setRecording(true);
+    } else {
+      setRecording(false);
+      setStatus("⏳ Transcribing… please wait.");
+      setTranscribing(true);
+      window.SensiQSTT.stop();
+    }
+  });
+
+  /* ── Copy ── */
+  document.getElementById("sttCopy").addEventListener("click", function () {
+    var text = display.innerText.trim();
+    if (text && text !== "Your speech will appear here…") {
+      navigator.clipboard.writeText(text).then(function () {
+        setStatus("✅ Copied!", "#16a34a");
+        setTimeout(function () {
+          setStatus("Click mic → speak → click Stop to transcribe");
+        }, 2000);
+      });
+    }
+  });
+
+  /* ── Clear ── */
+  document.getElementById("sttClear").addEventListener("click", function () {
+    if (recording) { window.SensiQSTT.stop(); setRecording(false); }
+    display.innerHTML = '<span class="stt-placeholder">Your speech will appear here…</span>';
+    if (window.SensiQSTT.resetTranscript) window.SensiQSTT.resetTranscript();
+    hideBanners();
+    setTranscribing(false);
+    setStatus("Cleared. Click mic to start again.");
+  });
+
+  /* ── Download ── */
+  document.getElementById("sttDownload").addEventListener("click", function () {
+    var text = display.innerText.trim();
+    if (text && text !== "Your speech will appear here…") {
+      var blob = new Blob([text], { type: "text/plain" });
+      var a    = document.createElement("a");
+      a.href   = URL.createObjectURL(blob);
+      a.download = "sensiq-transcript.txt";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  });
+
+});
+</script>

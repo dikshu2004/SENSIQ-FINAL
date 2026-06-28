@@ -1,0 +1,90 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="category-hero">
+  <div class="cover">
+    <div class="category-hero-inner">
+      <div class="category-hero-icon"><i class="fa-solid <%= course.icon %>"></i></div>
+      <div>
+        <p style="color:rgba(255,255,255,.5);margin-bottom:.2rem"><a href="/category/<%= type %>" style="color:var(--gold)"><%= meta.label %></a> / Course</p>
+        <h1 id="courseTitle"><%= course.title %></h1>
+        <p id="courseDesc"><%= course.description %></p>
+        <button class="tool-btn tool-btn-primary" id="readDescBtn" style="margin-top:.8rem">
+          <i class="fa-solid fa-volume-high"></i> Read Description
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dash-section">
+  <div class="cover" style="max-width:900px">
+    <div class="content-card" style="margin-bottom:1.5rem">
+      <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem">
+        <span class="tech-badge"><i class="fa-solid fa-clock"></i> <%= course.estimatedDuration %></span>
+        <span class="tech-badge"><i class="fa-solid fa-signal"></i> <%= course.difficulty %></span>
+        <span class="tech-badge"><i class="fa-solid fa-book"></i> <%= course.lessons.length %> lessons</span>
+      </div>
+      <% if (progress) { %>
+        <div class="progress-bar-mini" style="height:8px;margin-bottom:.5rem">
+          <div class="fill" style="width:<%= progress.percentComplete %>%"></div>
+        </div>
+        <p style="font-size:.88rem;color:var(--text-soft)"><%= progress.percentComplete %>% complete</p>
+      <% } %>
+    </div>
+
+    <h2 style="margin-bottom:1rem"><i class="fa-solid fa-list-ol" style="color:var(--blue)"></i> Lessons</h2>
+
+    <% course.lessons.forEach((lesson, idx) => {
+      const isCompleted = progress && progress.completedLessons && progress.completedLessons.map(String).includes(String(idx));
+    %>
+      <a href="/category/<%= type %>/course/<%= course._id %>/lesson/<%= idx %>" class="course-card reveal" style="display:flex;align-items:center;gap:1.2rem;margin-bottom:.8rem;padding:1.2rem 1.5rem">
+        <div style="width:44px;height:44px;border-radius:50%;background:<%= isCompleted ? '#10b981' : 'var(--blue-soft)' %>;color:<%= isCompleted ? '#fff' : 'var(--blue)' %>;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">
+          <% if (isCompleted) { %>
+            <i class="fa-solid fa-check"></i>
+          <% } else { %>
+            <%= idx + 1 %>
+          <% } %>
+        </div>
+        <div style="flex:1">
+          <h3 style="margin:0 0 .2rem;font-size:1rem"><%= lesson.title %></h3>
+          <span style="font-size:.82rem;color:var(--text-soft)"><i class="fa-solid fa-clock"></i> <%= lesson.duration %></span>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:var(--text-soft)"></i>
+      </a>
+    <% }) %>
+  </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var courseTitle = document.getElementById("courseTitle");
+  var courseDesc = document.getElementById("courseDesc");
+  var readBtn = document.getElementById("readDescBtn");
+
+  /* Auto-speak course title if voice mode is enabled */
+  if (localStorage.getItem("sensiq_voice_mode") === "true" && "speechSynthesis" in window) {
+    setTimeout(function() {
+      var utter = new SpeechSynthesisUtterance("You are now viewing " + courseTitle.innerText);
+      utter.lang = "en-IN";
+      utter.rate = 0.9;
+      window.speechSynthesis.speak(utter);
+    }, 500);
+  }
+
+  /* Read Description button */
+  if (readBtn) {
+    readBtn.addEventListener("click", function() {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        var text = courseTitle.innerText + ". " + courseDesc.innerText;
+        var utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "en-IN";
+        utter.rate = 0.95;
+        window.speechSynthesis.speak(utter);
+      }
+    });
+  }
+});
+</script>
+
+

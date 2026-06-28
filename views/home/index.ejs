@@ -1,0 +1,171 @@
+<% layout("/layouts/boilerplate") %>
+
+<!-- Voice Assistance Banner -->
+<div class="vi-banner" id="viBanner">
+  Welcome to SensiQ. Press <strong>Enter</strong> to enable voice assistance, or press any other key to continue.
+</div>
+
+<!-- ======= SEARCH RESULTS (only shown when searching) ======= -->
+<% if (typeof searchQuery !== 'undefined' && searchQuery.length > 0) { %>
+<section class="section-block search-results-section">
+  <div class="cover">
+    <div class="search-results-header reveal">
+      <span class="eyebrow eyebrow-blue">Search Results</span>
+      <h2>Results for "<%= searchQuery %>"</h2>
+      <p><%= courses.length %> course<%= courses.length !== 1 ? 's' : '' %> found</p>
+      <a href="/home" class="search-clear-btn"><i class="fa-solid fa-xmark"></i> Clear Search</a>
+    </div>
+
+    <% if (courses.length === 0) { %>
+      <div class="search-empty reveal">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <h3>No courses found for "<%= searchQuery %>"</h3>
+        <p>Try a different keyword or browse all categories below.</p>
+        <a href="/home" class="demo-btn">Browse All <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+    <% } else { %>
+      <div class="course-grid">
+        <% courses.forEach(course => { %>
+          <div class="course-card reveal">
+            <div class="course-card-icon">
+              <i class="fa-solid fa-book-open"></i>
+            </div>
+            <h3><%= course.title %></h3>
+            <p><%= course.description ? course.description.substring(0, 100) + '...' : '' %></p>
+            <div class="course-card-meta">
+              <span><i class="fa-solid fa-tag"></i> <%= course.category %></span>
+              <span><i class="fa-solid fa-layer-group"></i> <%= course.lessons ? course.lessons.length : 0 %> lessons</span>
+            </div>
+            <a href="/category/<%= course.category %>" class="card-btn">View Course <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+<% } %>
+
+<!-- ======= HERO CAROUSEL (hidden during search) ======= -->
+<% if (typeof searchQuery === 'undefined' || searchQuery.length === 0) { %>
+<section class="hero-carousel" aria-label="Hero slideshow">
+  <div class="slide active">
+    <img src="/images/hero1.jpg" alt="People communicating with sign language">
+    <div class="hero-slide-content">
+      <h1>Learning <span>Without Barriers</span></h1>
+      <p>Accessible for Deaf, Mute &amp; Visually Impaired</p>
+      <a href="/home/about" class="hero-btn">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="slide">
+    <img src="/images/hero2.jpg" alt="Teacher using sign language in classroom">
+    <div class="hero-slide-content">
+      <h1>Empowering <span>Every Learner</span></h1>
+      <p>Sign Language · Speech-to-Text · Text-to-Speech</p>
+      <a href="/home/signup" class="hero-btn">Get Started <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="slide">
+    <img src="/images/hero3.jpg" alt="Child learning with sign language">
+    <div class="hero-slide-content">
+      <h1>Education for <span>All Abilities</span></h1>
+      <p>Powered by Assistive Technology &amp; AI</p>
+      <a href="#categories" class="hero-btn">Explore Pathways <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </div>
+
+  <button class="carousel-arrow carousel-arrow-left" aria-label="Previous slide" id="carouselPrev"><i class="fa-solid fa-chevron-left"></i></button>
+  <button class="carousel-arrow carousel-arrow-right" aria-label="Next slide" id="carouselNext"><i class="fa-solid fa-chevron-right"></i></button>
+
+  <div class="carousel-dots" id="carouselDots">
+    <span class="carousel-dot active" data-index="0"></span>
+    <span class="carousel-dot" data-index="1"></span>
+    <span class="carousel-dot" data-index="2"></span>
+  </div>
+</section>
+<% } %>
+
+
+<!-- Category Cards -->
+<section class="section-block" id="categories">
+  <div class="cover">
+    <div class="section-heading reveal">
+      <span class="eyebrow eyebrow-gold">Learning Pathways</span>
+      <h2>Choose Your Learning Category</h2>
+      <p>Each pathway is designed with specific assistive technologies tailored to your learning needs.</p>
+    </div>
+
+    <div class="category-grid">
+      <article class="category-card reveal">
+        <div class="category-icon"><i class="fa-solid fa-ear-deaf"></i></div>
+        <h3>Deaf Learners</h3>
+        <p>Video modules with sign language support for better comprehension.</p>
+        <a href="/category/deaf" class="demo-btn">Try Demo <i class="fa-solid fa-face-smile"></i></a>
+      </article>
+
+      <article class="category-card reveal">
+        <div class="category-icon"><i class="fa-solid fa-microphone-lines-slash"></i></div>
+        <h3>Mute Learners</h3>
+        <p>Text to Speech &amp; Speech to Text — listen to content and interact using your voice.</p>
+        <a href="/category/mute" class="demo-btn">Try Demo <i class="fa-solid fa-face-smile"></i></a>
+      </article>
+
+      <article class="category-card reveal">
+        <div class="category-icon"><i class="fa-solid fa-eye-low-vision"></i></div>
+        <h3>Visually Impaired Learners</h3>
+        <p>Speech to Text &amp; Text to Speech — dictate and listen for full audio accessibility.</p>
+        <a href="/category/visually_impaired" class="demo-btn">Try Demo <i class="fa-solid fa-face-smile"></i></a>
+      </article>
+
+      <article class="category-card reveal">
+        <div class="category-icon"><i class="fa-solid fa-hands-asl-interpreting"></i></div>
+        <h3>Deaf &amp; Mute Learners</h3>
+        <p>Video modules with sign language support for better comprehension.</p>
+        <a href="/category/deaf_mute" class="demo-btn">Try Demo <i class="fa-solid fa-face-smile"></i></a>
+      </article>
+
+      <article class="category-card reveal">
+        <div class="category-icon"><i class="fa-solid fa-universal-access"></i></div>
+        <h3>Mute &amp; Visually Impaired</h3>
+        <p>Full TTS &amp; STT support — listen to content and interact using your voice.</p>
+        <a href="/category/mute_visually_impaired" class="demo-btn">Try Demo <i class="fa-solid fa-face-smile"></i></a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- About Section -->
+<section class="section-block about-section">
+  <div class="cover">
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <h2>About Us</h2>
+        <p class="about-subtitle">Inclusive Education for Everyone</p>
+        <p>We are building an <strong>Inclusive E-Learning Platform</strong> designed for learners with sensory disabilities. Our mission is to make education <strong>accessible, interactive, and independent</strong> for everyone.</p>
+        <p>Using Assistive Technologies like <strong>Sign Language</strong>, <strong>Text-to-Speech</strong>, <strong>Speech-to-Text</strong>, and <strong>Natural Language Processing</strong>, we make learning more engaging and inclusive.</p>
+
+        <div class="tech-badges">
+          <span class="tech-badge"><i class="fa-solid fa-universal-access"></i> Accessibility for all</span>
+          <span class="tech-badge"><i class="fa-solid fa-hands-asl-interpreting"></i> Sign Language Support</span>
+          <span class="tech-badge"><i class="fa-solid fa-headphones"></i> Text-to-Speech</span>
+          <span class="tech-badge"><i class="fa-solid fa-microphone"></i> Speech-to-Text</span>
+        </div>
+
+        <div class="mission-vision-grid">
+          <div class="mv-card">
+            <h4>Our Mission</h4>
+            <p>To ensure that education is accessible to everyone without barriers.</p>
+          </div>
+          <div class="mv-card">
+            <h4>Our Vision</h4>
+            <p>To use technology for bridging the gap in inclusive learning.</p>
+          </div>
+        </div>
+
+        <a href="/home/about" class="hero-btn">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="about-image reveal">
+        <img src="/images/about.jpg" alt="Inclusive classroom with diverse learners">
+      </div>
+    </div>
+  </div>
+</section>

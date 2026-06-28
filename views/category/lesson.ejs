@@ -1,0 +1,499 @@
+<% layout("/layouts/boilerplate") %>
+
+<%
+  /* Convert markdown-like content to HTML */
+  function renderContent(text) {
+    return text
+      .split("\n\n").map(para => {
+        if (para.startsWith("•") || para.startsWith("- ")) {
+          const items = para.split("\n").map(l => l.replace(/^[•\-]\s*/, "")).filter(Boolean);
+          return "<ul>" + items.map(i => "<li>" + boldify(i) + "</li>").join("") + "</ul>";
+        }
+        if (/^\d+\./.test(para)) {
+          const items = para.split("\n").map(l => l.replace(/^\d+\.\s*/, "")).filter(Boolean);
+          return "<ol>" + items.map(i => "<li>" + boldify(i) + "</li>").join("") + "</ol>";
+        }
+        if (para.startsWith("```")) return "<pre>" + para.replace(/```/g,"") + "</pre>";
+        return "<p>" + boldify(para) + "</p>";
+      }).join("");
+  }
+  function boldify(s) {
+    return s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+            .replace(/⚠️/g, "⚠️");
+  }
+%>
+
+<section class="category-hero" style="padding:2.5rem 0 1.5rem">
+  <div class="cover">
+    <p style="color:rgba(255,255,255,.5);margin-bottom:.3rem;font-size:.9rem">
+      <a href="/category/<%= type %>" style="color:var(--gold)"><%= meta.label %></a> /
+      <a href="/category/<%= type %>/course/<%= course._id %>" style="color:rgba(255,255,255,.7)"><%= course.title %></a> /
+      Lesson <%= lessonIndex + 1 %>
+    </p>
+    <h1 id="lessonTitle" style="font-size:1.6rem"><%= lesson.title %></h1>
+    <div style="display:flex;gap:1rem;margin-top:.5rem;align-items:center;flex-wrap:wrap">
+      <span style="font-size:.88rem;color:rgba(255,255,255,.6)"><i class="fa-solid fa-clock"></i> <%= lesson.duration %></span>
+      <span style="font-size:.88rem;color:rgba(255,255,255,.6)"><i class="fa-solid fa-book"></i> Lesson <%= lessonIndex + 1 %> of <%= totalLessons %></span>
+      <button class="tool-btn tool-btn-primary" id="readLessonBtn" style="font-size:.82rem;padding:.4rem 1rem">
+        <i class="fa-solid fa-volume-high"></i> Read Lesson
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Dual Video Section (Main + Sign Language) -->
+<%
+  var isHeyGen    = lesson.videoUrl && lesson.videoUrl.indexOf('heygen.com/embeds') !== -1;
+  var isDescript  = lesson.videoUrl && lesson.videoUrl.indexOf('descript.com') !== -1;
+  var isMainIframe = isHeyGen || isDescript;
+
+  var isSignDirect = lesson.signLanguageVideoUrl &&
+    /\.(mp4|webm|ogg|mov)$/i.test(lesson.signLanguageVideoUrl);
+  var isSignYouTube = lesson.signLanguageVideoUrl &&
+    /youtube\.com|youtu\.be/i.test(lesson.signLanguageVideoUrl);
+  var isSignIframe = !isSignDirect && !isSignYouTube && lesson.signLanguageVideoUrl;
+%>
+<% if (lesson.videoUrl || lesson.signLanguageVideoUrl) { %>
+<section style="padding:1.5rem 0 0">
+  <div class="cover">
+    <div class="video-dual-layout">
+      <% if (lesson.videoUrl) { %>
+      <div class="video-panel">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.6rem"><i class="fa-solid fa-play-circle" style="color:var(--blue)"></i> Course Video</h3>
+        <div class="video-wrapper">
+          <% if (isMainIframe) { %>
+          <iframe
+            id="mainVideoPlayer"
+            src="<%= lesson.videoUrl %>"
+            width="100%"
+            height="100%"
+            style="border:none;border-radius:12px;width:100%;height:100%;min-height:260px"
+            allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
+            allowfullscreen
+            title="Course Video"
+          ></iframe>
+          <% } else { %>
+          <div id="mainVideoPlayer"></div>
+          <% } %>
+        </div>
+      </div>
+      <% } %>
+      <% if (lesson.signLanguageVideoUrl) { %>
+      <div class="video-panel">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.6rem"><i class="fa-solid fa-hands-asl-interpreting" style="color:var(--gold-deep)"></i> Sign Language Interpretation</h3>
+        <div class="video-wrapper">
+          <% if (isSignDirect) { %>
+          <video
+            id="signVideoPlayer"
+            src="<%= lesson.signLanguageVideoUrl %>"
+            controls
+          >
+            Your browser does not support the video tag.
+          </video>
+          <% } else if (isSignIframe) { %>
+          <iframe
+            id="signVideoPlayer"
+            src="<%= lesson.signLanguageVideoUrl %>"
+            width="100%"
+            height="100%"
+            style="border:none;border-radius:12px"
+            allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
+            allowfullscreen
+            title="Sign Language Interpretation"
+          ></iframe>
+          <% } else { %>
+          <div id="signVideoPlayer"></div>
+          <% } %>
+        </div>
+      </div>
+      <% } %>
+    </div>
+    <% if (!isMainIframe && !isSignDirect && !isSignIframe && lesson.videoUrl && lesson.signLanguageVideoUrl) { %>
+    <div style="text-align:center;margin-top:.8rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+      <button class="tool-btn tool-btn-primary" id="syncPlayBoth" style="font-size:.8rem;padding:.4rem 1rem">
+        <i class="fa-solid fa-play"></i> Play Both
+      </button>
+      <button class="tool-btn tool-btn-outline" id="syncPauseBoth" style="font-size:.8rem;padding:.4rem 1rem">
+        <i class="fa-solid fa-pause"></i> Pause Both
+      </button>
+      <button class="tool-btn tool-btn-outline" id="syncRestart" style="font-size:.8rem;padding:.4rem 1rem">
+        <i class="fa-solid fa-rotate-left"></i> Restart & Sync
+      </button>
+    </div>
+    <p style="text-align:center;font-size:.78rem;color:var(--text-soft);margin-top:.4rem">
+      <i class="fa-solid fa-link"></i> Videos are synchronized — use the buttons above to control both together
+    </p>
+    <% } %>
+  </div>
+</section>
+<% } %>
+
+<section style="padding:2rem 0 3rem">
+  <div class="cover">
+    <div class="lesson-layout">
+      <!-- Main content -->
+      <div class="lesson-main">
+        <div class="lesson-content" id="lessonContent">
+          <%- renderContent(lesson.content) %>
+        </div>
+
+        <div class="lesson-nav">
+          <% if (prevLesson !== null) { %>
+            <a href="/category/<%= type %>/course/<%= course._id %>/lesson/<%= prevLesson %>" class="lesson-nav-btn">
+              <i class="fa-solid fa-arrow-left"></i> Previous
+            </a>
+          <% } else { %>
+            <span></span>
+          <% } %>
+
+          <button class="lesson-nav-btn primary" id="markCompleteBtn"
+            data-course-id="<%= course._id %>"
+            data-lesson-index="<%= lessonIndex %>"
+            data-total="<%= totalLessons %>">
+            <i class="fa-solid fa-check"></i> Mark Complete
+          </button>
+
+          <% if (nextLesson !== null) { %>
+            <a href="/category/<%= type %>/course/<%= course._id %>/lesson/<%= nextLesson %>" class="lesson-nav-btn primary">
+              Next <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          <% } else { %>
+            <a href="/category/<%= type %>/course/<%= course._id %>" class="lesson-nav-btn">
+              Back to Course <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Sidebar Tools -->
+      <div class="lesson-sidebar">
+        <%
+          const isMuteType     = ["mute","deaf_mute","mute_visually_impaired"].includes(type);
+          const isViType       = ["visually_impaired","mute_visually_impaired"].includes(type);
+          const isDeafType     = ["deaf","deaf_mute"].includes(type);
+          const needsBothAudio = isMuteType || isViType;
+        %>
+
+        <!-- Text to Speech (Mute + Visually Impaired + combos) -->
+        <% if (needsBothAudio) { %>
+        <div class="tool-panel">
+          <h3><i class="fa-solid fa-volume-high"></i> Text to Speech</h3>
+          <p style="font-size:.85rem;color:var(--text-soft);margin-bottom:.8rem">Listen to this lesson read aloud</p>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="tool-btn tool-btn-primary" id="ttsPlayLesson"><i class="fa-solid fa-play"></i> Play</button>
+            <button class="tool-btn tool-btn-outline" id="ttsPauseLesson"><i class="fa-solid fa-pause"></i> Pause</button>
+            <button class="tool-btn tool-btn-outline" id="ttsStopLesson"><i class="fa-solid fa-stop"></i> Stop</button>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- Text to Sign (Deaf / Deaf-Mute) -->
+        <% if (isDeafType) { %>
+        <div class="tool-panel">
+          <h3><i class="fa-solid fa-hands-asl-interpreting"></i> Text to Sign (ISL)</h3>
+          <p style="font-size:.85rem;color:var(--text-soft);margin-bottom:.6rem">Convert text to Indian Sign Language fingerspelling</p>
+          <div style="display:flex;gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap">
+            <button class="tool-btn tool-btn-primary" id="signLessonTitle" style="font-size:.78rem;padding:.35rem .7rem"><i class="fa-solid fa-hand"></i> Sign Lesson Title</button>
+            <button class="tool-btn tool-btn-outline" id="signClearLesson" style="font-size:.78rem;padding:.35rem .7rem"><i class="fa-solid fa-eraser"></i> Clear</button>
+          </div>
+          <input type="text" class="sign-input" id="lessonSignInput" placeholder="Type any word to see it in sign language..." style="width:100%;margin-bottom:.5rem">
+          <div class="sign-display" id="lessonSignDisplay" style="min-height:120px;justify-content:flex-start"></div>
+          <p style="font-size:.75rem;color:var(--text-soft);margin-top:.4rem;font-style:italic"><i class="fa-solid fa-info-circle"></i> Each card shows the ISL hand shape for that letter</p>
+        </div>
+        <% } %>
+
+        <!-- Speech to Text (Mute + Visually Impaired + combos) -->
+        <% if (needsBothAudio) { %>
+        <div class="tool-panel">
+          <h3><i class="fa-solid fa-microphone"></i> Speech to Text</h3>
+          <p style="font-size:.85rem;color:var(--text-soft);margin-bottom:.8rem">Speak to interact without typing</p>
+          <button class="tool-btn tool-btn-primary" id="lessonSttBtn" style="width:100%"><i class="fa-solid fa-microphone"></i> Start Listening</button>
+          <div class="stt-display" id="lessonSttDisplay" style="min-height:80px;margin-top:.5rem;font-size:.9rem"></div>
+        </div>
+        <% } %>
+
+        <!-- Lesson list -->
+        <div class="tool-panel">
+          <h3><i class="fa-solid fa-list"></i> All Lessons</h3>
+          <% course.lessons.forEach((l, i) => { %>
+            <a href="/category/<%= type %>/course/<%= course._id %>/lesson/<%= i %>"
+               style="display:block;padding:.5rem .6rem;border-radius:10px;font-size:.88rem;font-weight:<%= i === lessonIndex ? '700' : '500' %>;color:<%= i === lessonIndex ? 'var(--blue)' : 'var(--text)' %>;background:<%= i === lessonIndex ? 'var(--blue-soft)' : 'transparent' %>;margin-bottom:.2rem;transition:background .2s">
+              <%= i + 1 %>. <%= l.title %>
+            </a>
+          <% }) %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<% if ((lesson.videoUrl || lesson.signLanguageVideoUrl) && !isMainIframe && !isSignDirect && !isSignIframe) { %>
+<!-- YouTube IFrame API for video sync -->
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+var mainPlayer = null;
+var signPlayer = null;
+var playersReady = 0;
+
+function extractVideoId(url) {
+  if (!url) return null;
+  var match = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function onYouTubeIframeAPIReady() {
+  <% if (lesson.videoUrl) { %>
+  var mainId = extractVideoId("<%= lesson.videoUrl %>");
+  if (mainId) {
+    mainPlayer = new YT.Player("mainVideoPlayer", {
+      videoId: mainId,
+      width: "100%",
+      height: "100%",
+      playerVars: { rel: 0, modestbranding: 1 },
+      events: { onReady: onPlayerReady }
+    });
+  }
+  <% } %>
+  <% if (lesson.signLanguageVideoUrl && !isSignDirect) { %>
+  var signId = extractVideoId("<%= lesson.signLanguageVideoUrl %>");
+  if (signId) {
+    signPlayer = new YT.Player("signVideoPlayer", {
+      videoId: signId,
+      width: "100%",
+      height: "100%",
+      playerVars: { rel: 0, modestbranding: 1 },
+      events: { onReady: onPlayerReady }
+    });
+  }
+  <% } %>
+}
+
+function onPlayerReady() {
+  playersReady++;
+}
+
+/* Sync controls */
+document.addEventListener("DOMContentLoaded", function() {
+  var playBtn = document.getElementById("syncPlayBoth");
+  var pauseBtn = document.getElementById("syncPauseBoth");
+  var restartBtn = document.getElementById("syncRestart");
+
+  if (playBtn) {
+    playBtn.addEventListener("click", function() {
+      if (mainPlayer && mainPlayer.playVideo) mainPlayer.playVideo();
+      if (signPlayer && signPlayer.playVideo) signPlayer.playVideo();
+    });
+  }
+  if (pauseBtn) {
+    pauseBtn.addEventListener("click", function() {
+      if (mainPlayer && mainPlayer.pauseVideo) mainPlayer.pauseVideo();
+      if (signPlayer && signPlayer.pauseVideo) signPlayer.pauseVideo();
+    });
+  }
+  if (restartBtn) {
+    restartBtn.addEventListener("click", function() {
+      if (mainPlayer && mainPlayer.seekTo) { mainPlayer.seekTo(0); mainPlayer.playVideo(); }
+      if (signPlayer && signPlayer.seekTo) { signPlayer.seekTo(0); signPlayer.playVideo(); }
+    });
+  }
+});
+</script>
+<% } %>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  /* Auto-speak lesson title if voice mode is enabled */
+  if (localStorage.getItem("sensiq_voice_mode") === "true" && "speechSynthesis" in window) {
+    setTimeout(function() {
+      var title = document.getElementById("lessonTitle");
+      if (title) {
+        var utter = new SpeechSynthesisUtterance("You are now viewing " + title.innerText);
+        utter.lang = "en-IN";
+        utter.rate = 0.9;
+        window.speechSynthesis.speak(utter);
+      }
+    }, 500);
+  }
+
+  /* Read Lesson button */
+  var readLessonBtn = document.getElementById("readLessonBtn");
+  var lessonContent = document.getElementById("lessonContent");
+  if (readLessonBtn && lessonContent) {
+    readLessonBtn.addEventListener("click", function() {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        var text = lessonContent.innerText.substring(0, 5000);
+        var utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "en-IN";
+        utter.rate = 0.95;
+        window.speechSynthesis.speak(utter);
+      }
+    });
+  }
+
+  /* TTS for lesson */
+  const content = document.getElementById("lessonContent");
+  const playBtn = document.getElementById("ttsPlayLesson");
+  const pauseBtn = document.getElementById("ttsPauseLesson");
+  const stopBtn = document.getElementById("ttsStopLesson");
+  if (playBtn && content) {
+    playBtn.addEventListener("click", () => { window.SensiQTTS && window.SensiQTTS.speak(content.innerText); });
+    pauseBtn.addEventListener("click", () => { window.SensiQTTS && window.SensiQTTS.pause(); });
+    stopBtn.addEventListener("click", () => { window.SensiQTTS && window.SensiQTTS.stop(); });
+  }
+
+  /* ── Mark Complete ── */
+  const mcBtn = document.getElementById("markCompleteBtn");
+  if (mcBtn) {
+
+    /* Show a toast notification */
+    function showToast(msg, isSuccess) {
+      const toast = document.createElement("div");
+      toast.textContent = msg;
+      toast.style.cssText = [
+        "position:fixed","bottom:2rem","left:50%","transform:translateX(-50%)",
+        "background:" + (isSuccess ? "#10b981" : "#ef4444"),
+        "color:#fff","padding:.75rem 1.5rem","border-radius:12px",
+        "font-weight:600","font-size:.92rem","z-index:9999",
+        "box-shadow:0 4px 20px rgba(0,0,0,.35)","transition:opacity .4s",
+      ].join(";");
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 400); }, 3000);
+    }
+
+    mcBtn.addEventListener("click", async () => {
+      if (mcBtn.disabled) return;
+
+      mcBtn.disabled = true;
+      mcBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
+
+      try {
+        const res = await fetch("/api/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            courseId:     mcBtn.dataset.courseId,
+            lessonIndex:  parseInt(mcBtn.dataset.lessonIndex),
+            totalLessons: parseInt(mcBtn.dataset.total),
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          mcBtn.innerHTML = '<i class="fa-solid fa-check-double"></i> Completed!';
+          mcBtn.style.background   = "#10b981";
+          mcBtn.style.borderColor  = "#10b981";
+          mcBtn.style.color        = "#fff";
+          showToast(`✅ Lesson marked complete! ${data.completedCount}/${data.totalLessons} lessons done (${data.percentComplete}%)`, true);
+        } else {
+          mcBtn.disabled = false;
+          mcBtn.innerHTML = '<i class="fa-solid fa-check"></i> Mark Complete';
+          showToast("❌ " + (data.error || "Could not save progress."), false);
+        }
+      } catch (e) {
+        mcBtn.disabled = false;
+        mcBtn.innerHTML = '<i class="fa-solid fa-check"></i> Mark Complete';
+        showToast("❌ Network error. Please check your connection.", false);
+      }
+    });
+  }
+
+  /* Sidebar STT — MediaRecorder + Gemini AI */
+  const sttBtn     = document.getElementById("lessonSttBtn");
+  const sttDisplay = document.getElementById("lessonSttDisplay");
+  if (sttBtn && window.SensiQSTT) {
+    let sttRecording    = false;
+    let sttTranscribing = false;
+
+    function sttStatus(msg, isErr) {
+      /* Show status inside the display box */
+      if (sttDisplay && msg.indexOf("Transcribing") !== -1) {
+        sttDisplay.innerHTML = '<em style="color:var(--text-soft);font-size:.85rem">⏳ AI is transcribing…</em>';
+      }
+    }
+
+    sttBtn.addEventListener("click", () => {
+      if (sttTranscribing) return; /* block during processing */
+
+      if (!sttRecording) {
+        /* START recording */
+        window.SensiQSTT.start(sttDisplay, function(msg, isErr) {
+          sttStatus(msg, isErr);
+          /* Detect done */
+          if (msg.indexOf("Done") !== -1 || msg.indexOf("complete") !== -1) {
+            sttTranscribing = false;
+            sttBtn.disabled = false;
+            sttBtn.innerHTML = '<i class="fa-solid fa-microphone"></i> Start Listening';
+            sttBtn.classList.remove("tool-btn-danger");
+            sttBtn.classList.add("tool-btn-primary");
+          }
+          /* Detect errors */
+          if (isErr && msg !== "mic-denied" && msg !== "mic-missing") {
+            sttTranscribing = false;
+            sttBtn.disabled = false;
+            sttBtn.innerHTML = '<i class="fa-solid fa-microphone"></i> Start Listening';
+            sttBtn.classList.remove("tool-btn-danger");
+            sttBtn.classList.add("tool-btn-primary");
+          }
+        });
+        sttBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop & Transcribe';
+        sttBtn.classList.add("tool-btn-danger");
+        sttBtn.classList.remove("tool-btn-primary");
+        sttRecording = true;
+      } else {
+        /* STOP recording → trigger AI transcription */
+        window.SensiQSTT.stop();
+        sttRecording    = false;
+        sttTranscribing = true;
+        sttBtn.disabled = true;
+        sttBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Transcribing…';
+        sttBtn.classList.remove("tool-btn-danger");
+        sttBtn.classList.add("tool-btn-primary");
+      }
+    });
+  }
+
+  /* Sidebar T2S — full sign language integration */
+  var signInput = document.getElementById("lessonSignInput");
+  var signDisplay = document.getElementById("lessonSignDisplay");
+  var signTitleBtn = document.getElementById("signLessonTitle");
+  var signClearBtn = document.getElementById("signClearLesson");
+
+  if (signInput && signDisplay && window.SensiQT2S) {
+    /* Real-time render as user types */
+    signInput.addEventListener("input", function() {
+      window.SensiQT2S.render(signInput.value, signDisplay);
+    });
+
+    /* Enter key triggers animation */
+    signInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && signInput.value.trim()) {
+        window.SensiQT2S.animate(signInput.value, signDisplay, 400);
+      }
+    });
+
+    /* Sign Lesson Title button */
+    if (signTitleBtn) {
+      signTitleBtn.addEventListener("click", function() {
+        var title = document.getElementById("lessonTitle");
+        if (title) {
+          signInput.value = title.innerText;
+          window.SensiQT2S.animate(title.innerText, signDisplay, 350);
+        }
+      });
+    }
+
+    /* Clear button */
+    if (signClearBtn) {
+      signClearBtn.addEventListener("click", function() {
+        signInput.value = "";
+        signDisplay.innerHTML = "";
+      });
+    }
+  }
+});
+
+</script>
+

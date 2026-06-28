@@ -1,0 +1,185 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="tool-hero">
+  <div class="cover">
+    <span class="eyebrow eyebrow-dark">Assistive Tool</span>
+    <h1><i class="fa-solid fa-hands-asl-interpreting"></i> Text to Sign Language</h1>
+    <p>Convert any English text into ISL (Indian Sign Language) fingerspelling. Each letter is displayed as a hand sign to help deaf and mute learners understand text visually.</p>
+  </div>
+</section>
+
+<section class="tool-workspace">
+  <div class="tool-card">
+    <div class="sign-input-row">
+      <input type="text" class="sign-input" id="t2sInput" placeholder="Type a word or sentence..." maxlength="100" autofocus>
+      <button class="tool-btn tool-btn-primary" id="t2sConvert"><i class="fa-solid fa-hand"></i> Convert</button>
+      <button class="tool-btn tool-btn-outline" id="t2sExportVideo"><i class="fa-solid fa-file-video"></i> Export Video</button>
+      <button class="tool-btn tool-btn-outline" id="t2sClear"><i class="fa-solid fa-trash"></i> Clear</button>
+    </div>
+
+    <div style="margin-bottom:1rem;display:flex;gap:.8rem;flex-wrap:wrap">
+      <div class="tts-control-group">
+        <label for="t2sSpeed">Animation Speed:</label>
+        <input type="range" id="t2sSpeed" min="200" max="1000" step="100" value="500">
+        <span id="t2sSpeedVal">500ms</span>
+      </div>
+    </div>
+
+    <div class="sign-display" id="t2sDisplay">
+      <p style="color:var(--text-soft);font-style:italic;text-align:center">Your text will appear as sign language here</p>
+    </div>
+
+    <!-- Export Video Progress & Preview Panel (Hidden by default) -->
+    <div id="videoExportModal" style="display: none; margin-top: 1.5rem; padding: 1.5rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); position: relative;">
+      <h3 style="margin-top: 0; font-size: 1.1rem; color: var(--navy); display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-film" style="color: var(--blue);"></i> Sign Language Video Generator
+      </h3>
+      
+      <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+        <!-- Preview Canvas -->
+        <div style="background: #f8f9fa; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; width: 200px; height: 200px; box-shadow: var(--shadow-sm);">
+          <canvas id="exportCanvas" width="400" height="400" style="width: 100%; height: 100%; object-fit: contain; background: #ffffff;"></canvas>
+        </div>
+        
+        <!-- Status & Controls -->
+        <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.8rem;">
+          <div id="exportStatusText" style="font-weight: 600; color: var(--text); font-size: 0.95rem;">
+            Preparing to generate video...
+          </div>
+          
+          <div class="progress-bar-mini" style="width: 100%; height: 8px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden;">
+            <div id="exportProgressBar" style="width: 0%; height: 100%; background: var(--blue); transition: width 0.15s ease;"></div>
+          </div>
+          
+          <div id="exportActions" style="display: flex; gap: 0.8rem; margin-top: 0.5rem;">
+            <a id="downloadVideoBtn" class="tool-btn tool-btn-primary" style="display: none; font-size: 0.82rem; text-decoration: none; align-items: center; gap: 0.4rem;" href="#" download="sensiq-sign-translation.webm">
+              <i class="fa-solid fa-download"></i> Download Video
+            </a>
+            <button id="closeExportBtn" class="tool-btn tool-btn-outline" style="font-size: 0.82rem;">Close Panel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;padding:1.2rem;background:var(--card-bg);border-radius:var(--radius)">
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:.8rem"><i class="fa-solid fa-circle-info" style="color:var(--blue)"></i> About ISL Fingerspelling</h3>
+      <p style="font-size:.9rem;color:var(--text-soft);line-height:1.7;margin:0">
+        Indian Sign Language (ISL) uses a one-handed fingerspelling system where each letter of the English alphabet is represented by a unique hand shape. Fingerspelling is used for proper nouns, technical terms, and words that don't have a specific sign. This tool animates each letter sequentially to help learners associate written text with sign language.
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const input = document.getElementById("t2sInput");
+  const display = document.getElementById("t2sDisplay");
+  const speedSlider = document.getElementById("t2sSpeed");
+  const speedVal = document.getElementById("t2sSpeedVal");
+  
+  const convertBtn = document.getElementById("t2sConvert");
+  const exportBtn = document.getElementById("t2sExportVideo");
+  const clearBtn = document.getElementById("t2sClear");
+  
+  const exportModal = document.getElementById("videoExportModal");
+  const exportCanvas = document.getElementById("exportCanvas");
+  const exportStatus = document.getElementById("exportStatusText");
+  const exportProgress = document.getElementById("exportProgressBar");
+  const downloadBtn = document.getElementById("downloadVideoBtn");
+  const closeExportBtn = document.getElementById("closeExportBtn");
+
+  let currentVideoUrl = null;
+
+  speedSlider.addEventListener("input", () => {
+    speedVal.textContent = speedSlider.value + "ms";
+  });
+
+  function disableControls(disable) {
+    input.disabled = disable;
+    convertBtn.disabled = disable;
+    exportBtn.disabled = disable;
+    clearBtn.disabled = disable;
+    speedSlider.disabled = disable;
+  }
+
+  convertBtn.addEventListener("click", () => {
+    const text = input.value.trim();
+    if (text && window.SensiQT2S) {
+      window.SensiQT2S.animate(text, display, parseInt(speedSlider.value));
+    }
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const text = input.value.trim();
+      if (text && window.SensiQT2S) {
+        window.SensiQT2S.animate(text, display, parseInt(speedSlider.value));
+      }
+    }
+  });
+
+  exportBtn.addEventListener("click", () => {
+    const text = input.value.trim();
+    if (!text) {
+      alert("Please type some text first before exporting a video.");
+      return;
+    }
+
+    if (!window.SensiQT2S) {
+      alert("Sign language translator logic is not fully loaded. Please refresh the page.");
+      return;
+    }
+
+    // Clean up previous video URL if exists
+    if (currentVideoUrl) {
+      URL.revokeObjectURL(currentVideoUrl);
+      currentVideoUrl = null;
+    }
+
+    // Reset UI
+    exportModal.style.display = "block";
+    exportStatus.textContent = "Initializing camera stream and recorder...";
+    exportProgress.style.width = "0%";
+    downloadBtn.style.display = "none";
+    disableControls(true);
+
+    window.SensiQT2S.exportVideo(
+      text,
+      exportCanvas,
+      parseInt(speedSlider.value),
+      (current, total, char) => {
+        exportStatus.innerHTML = `Generating video: Rendering letter <strong>${current}</strong> of <strong>${total}</strong> ('${char.toUpperCase()}')`;
+        exportProgress.style.width = `${(current / total) * 100}%`;
+      },
+      (videoUrl) => {
+        currentVideoUrl = videoUrl;
+        exportStatus.innerHTML = "🎉 <strong>Video generation complete!</strong> Click below to download.";
+        exportProgress.style.width = "100%";
+        downloadBtn.href = videoUrl;
+        downloadBtn.style.display = "inline-flex";
+        disableControls(false);
+      },
+      (err) => {
+        console.error(err);
+        exportStatus.innerHTML = `❌ <strong>Error:</strong> ${err.message || "Failed to record video."}`;
+        disableControls(false);
+      }
+    );
+  });
+
+  closeExportBtn.addEventListener("click", () => {
+    exportModal.style.display = "none";
+    if (currentVideoUrl) {
+      URL.revokeObjectURL(currentVideoUrl);
+      currentVideoUrl = null;
+    }
+    disableControls(false);
+  });
+
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    display.innerHTML = '<p style="color:var(--text-soft);font-style:italic;text-align:center">Your text will appear as sign language here</p>';
+  });
+});
+</script>
+

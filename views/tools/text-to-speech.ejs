@@ -1,0 +1,95 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="tool-hero">
+  <div class="cover">
+    <span class="eyebrow eyebrow-dark">Assistive Tool</span>
+    <h1><i class="fa-solid fa-volume-high"></i> Text to Speech</h1>
+    <p>Type or paste any text and hear it spoken aloud. Customise the voice, speed, and pitch. Perfect for visually impaired learners.</p>
+  </div>
+</section>
+
+<section class="tool-workspace">
+  <div class="tool-card">
+    <textarea class="tts-input" id="ttsInput" placeholder="Type or paste your text here...">Welcome to SensiQ, an inclusive e-learning platform designed for deaf, mute, and visually impaired learners.</textarea>
+
+    <div class="tts-controls">
+      <div class="tts-control-group">
+        <label for="ttsVoice">Voice:</label>
+        <select id="ttsVoice" style="min-width:160px"></select>
+      </div>
+      <div class="tts-control-group">
+        <label for="ttsRate">Speed:</label>
+        <input type="range" id="ttsRate" min="0.5" max="2" step="0.1" value="1">
+        <span id="ttsRateVal">1x</span>
+      </div>
+      <div class="tts-control-group">
+        <label for="ttsPitch">Pitch:</label>
+        <input type="range" id="ttsPitch" min="0.5" max="2" step="0.1" value="1">
+        <span id="ttsPitchVal">1</span>
+      </div>
+    </div>
+
+    <div class="tool-actions" style="margin-top:1.5rem">
+      <button class="tool-btn tool-btn-primary" id="ttsPlay"><i class="fa-solid fa-play"></i> Play</button>
+      <button class="tool-btn tool-btn-outline" id="ttsPause"><i class="fa-solid fa-pause"></i> Pause</button>
+      <button class="tool-btn tool-btn-danger" id="ttsStop"><i class="fa-solid fa-stop"></i> Stop</button>
+    </div>
+
+    <div id="ttsHighlight" style="margin-top:1.5rem;padding:1.2rem;background:var(--card-bg);border-radius:var(--radius);min-height:60px;line-height:1.8;display:none"></div>
+  </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const input = document.getElementById("ttsInput");
+  const voiceSelect = document.getElementById("ttsVoice");
+  const rateSlider = document.getElementById("ttsRate");
+  const pitchSlider = document.getElementById("ttsPitch");
+  const rateVal = document.getElementById("ttsRateVal");
+  const pitchVal = document.getElementById("ttsPitchVal");
+  const highlight = document.getElementById("ttsHighlight");
+
+  rateSlider.addEventListener("input", () => { rateVal.textContent = rateSlider.value + "x"; });
+  pitchSlider.addEventListener("input", () => { pitchVal.textContent = pitchSlider.value; });
+
+  /* Populate voices */
+  function loadVoices() {
+    const voices = speechSynthesis.getVoices();
+    voiceSelect.innerHTML = "";
+    voices.forEach((v, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = v.name + " (" + v.lang + ")";
+      if (v.lang.startsWith("en")) voiceSelect.appendChild(opt);
+    });
+    /* Add non-english */
+    voices.forEach((v, i) => {
+      if (!v.lang.startsWith("en")) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = v.name + " (" + v.lang + ")";
+        voiceSelect.appendChild(opt);
+      }
+    });
+  }
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+
+  document.getElementById("ttsPlay").addEventListener("click", () => {
+    const text = input.value.trim();
+    if (!text) return;
+    highlight.style.display = "block";
+    highlight.textContent = text;
+    const voices = speechSynthesis.getVoices();
+    window.SensiQTTS.speak(text, {
+      voice: voices[parseInt(voiceSelect.value)] || null,
+      rate: parseFloat(rateSlider.value),
+      pitch: parseFloat(pitchSlider.value),
+    });
+  });
+
+  document.getElementById("ttsPause").addEventListener("click", () => { window.SensiQTTS.pause(); });
+  document.getElementById("ttsStop").addEventListener("click", () => { window.SensiQTTS.stop(); highlight.style.display = "none"; });
+});
+</script>
+

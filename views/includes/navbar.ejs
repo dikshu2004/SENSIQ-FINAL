@@ -1,0 +1,81 @@
+<nav class="app-navbar" role="navigation" aria-label="Main navigation">
+  <div class="cover">
+    <a class="navbar-brand" href="/home">
+      <span class="brand-mark"><i class="fa-solid fa-wave-square"></i></span>
+      <span>SensiQ</span>
+    </a>
+
+    <form class="nav-search" action="/home" method="get" role="search">
+      <input type="text" name="q" placeholder="Search courses..." aria-label="Search courses"
+        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>">
+      <button type="submit" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </form>
+
+    <button class="nav-toggler" type="button" aria-label="Toggle navigation" id="navToggler">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="nav-mobile-wrap" id="navMobileWrap">
+      <ul class="nav-links">
+        <li><a class="nav-link" href="/home"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li><a class="nav-link" href="/home/about"><i class="fa-solid fa-circle-info"></i> About</a></li>
+        <li><a class="nav-link" href="/home/contact"><i class="fa-solid fa-phone"></i> Contact Us</a></li>
+        <li class="nav-dropdown" id="navCatDropdown">
+          <a class="nav-link" href="#" id="catDropdownToggle" aria-expanded="false" aria-haspopup="true">
+            <i class="fa-solid fa-list"></i> Categories <i class="fa-solid fa-chevron-down" style="font-size:.7rem"></i>
+          </a>
+          <div class="nav-dropdown-menu" role="menu">
+            <a href="/category/deaf" role="menuitem"><i class="fa-solid fa-ear-deaf"></i> Deaf Learners</a>
+            <a href="/category/mute" role="menuitem"><i class="fa-solid fa-microphone-lines-slash"></i> Mute Learners</a>
+            <a href="/category/visually_impaired" role="menuitem"><i class="fa-solid fa-eye-low-vision"></i> Visually Impaired</a>
+            <a href="/category/deaf_mute" role="menuitem"><i class="fa-solid fa-hands-asl-interpreting"></i> Deaf & Mute</a>
+            <a href="/category/mute_visually_impaired" role="menuitem"><i class="fa-solid fa-universal-access"></i> Mute & Visually Impaired</a>
+          </div>
+        </li>
+        <li class="nav-dropdown" id="navToolsDropdown">
+          <a class="nav-link nav-link-tools" href="#" id="toolsDropdownToggle" aria-expanded="false" aria-haspopup="true">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Assistive Tools <i class="fa-solid fa-chevron-down" style="font-size:.7rem"></i>
+          </a>
+          <div class="nav-dropdown-menu nav-tools-menu" role="menu">
+            <div class="nav-tools-header">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Accessibility Tools
+            </div>
+            <a href="/tools/speech-to-text" role="menuitem" class="nav-tool-item">
+              <span class="nav-tool-icon stt-icon"><i class="fa-solid fa-microphone"></i></span>
+              <span class="nav-tool-info">
+                <strong>Speech to Text</strong>
+                <small>Convert your voice to written text</small>
+              </span>
+            </a>
+            <a href="/tools/text-to-speech" role="menuitem" class="nav-tool-item">
+              <span class="nav-tool-icon tts-icon"><i class="fa-solid fa-volume-high"></i></span>
+              <span class="nav-tool-info">
+                <strong>Text to Speech</strong>
+                <small>Listen to text read aloud</small>
+              </span>
+            </a>
+            <a href="/tools/text-to-sign" role="menuitem" class="nav-tool-item">
+              <span class="nav-tool-icon t2s-icon"><i class="fa-solid fa-hands-asl-interpreting"></i></span>
+              <span class="nav-tool-info">
+                <strong>Text to Sign</strong>
+                <small>Convert text to ISL fingerspelling</small>
+              </span>
+            </a>
+          </div>
+        </li>
+      </ul>
+
+      <div class="nav-auth">
+        <% if (!currentUser) { %>
+          <a class="nav-btn nav-btn-outline" href="/home/login">Log in</a>
+          <a class="nav-btn nav-btn-filled" href="/home/signup">Sign up</a>
+        <% } else { %>
+          <span class="nav-user-badge"><i class="fa-solid fa-user"></i> <%= currentUser.username %></span>
+          <a class="nav-btn nav-btn-outline" href="/dashboard"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+          <a class="nav-btn nav-btn-filled" href="/home/logout">Log out</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</nav>
+

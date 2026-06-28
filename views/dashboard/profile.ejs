@@ -1,0 +1,49 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="content-hero">
+  <div class="cover narrow">
+    <span class="eyebrow eyebrow-dark">My Profile</span>
+    <h1>Accessibility Preferences</h1>
+    <p>Customise your learning experience. Choose your disability category and preferred accessibility settings.</p>
+  </div>
+</section>
+
+<section class="section-block section-light">
+  <div class="cover" style="max-width:720px">
+    <div class="content-card">
+      <h2><i class="fa-solid fa-user-gear" style="color:var(--blue)"></i> Update Profile</h2>
+      <form action="/dashboard/profile" method="post" style="margin-top:1.2rem">
+        <label class="form-label" for="disabilityType" style="font-weight:600;display:block;margin-bottom:.3rem">Learning Category</label>
+        <select id="disabilityType" name="disabilityType" class="form-control" style="width:100%;border-radius:14px;padding:.8rem 1rem;border:2px solid var(--line);font-family:inherit;font-size:.95rem;margin-bottom:1rem">
+          <option value="none" <%= currentUser.disabilityType === "none" ? "selected" : "" %>>No specific category</option>
+          <option value="deaf" <%= currentUser.disabilityType === "deaf" ? "selected" : "" %>>Deaf Learner</option>
+          <option value="mute" <%= currentUser.disabilityType === "mute" ? "selected" : "" %>>Mute Learner</option>
+          <option value="visually_impaired" <%= currentUser.disabilityType === "visually_impaired" ? "selected" : "" %>>Visually Impaired Learner</option>
+          <option value="deaf_mute" <%= currentUser.disabilityType === "deaf_mute" ? "selected" : "" %>>Deaf & Mute Learner</option>
+          <option value="mute_visually_impaired" <%= currentUser.disabilityType === "mute_visually_impaired" ? "selected" : "" %>>Mute & Visually Impaired Learner</option>
+        </select>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+          <label style="display:flex;align-items:center;gap:.6rem;padding:.8rem 1rem;background:var(--card-bg);border-radius:14px;cursor:pointer;font-weight:600;font-size:.92rem">
+            <input type="checkbox" name="highContrast" <%= currentUser.preferences && currentUser.preferences.highContrast ? "checked" : "" %> style="width:20px;height:20px">
+            <span><i class="fa-solid fa-circle-half-stroke" style="color:var(--blue)"></i> High Contrast</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.6rem;padding:.8rem 1rem;background:var(--card-bg);border-radius:14px;cursor:pointer;font-weight:600;font-size:.92rem">
+            <input type="checkbox" name="autoNarrate" <%= currentUser.preferences && currentUser.preferences.autoNarrate ? "checked" : "" %> style="width:20px;height:20px">
+            <span><i class="fa-solid fa-volume-high" style="color:var(--blue)"></i> Auto Narrate</span>
+          </label>
+        </div>
+
+        <label class="form-label" for="fontSize" style="font-weight:600;display:block;margin-bottom:.3rem">Font Size</label>
+        <select id="fontSize" name="fontSize" class="form-control" style="width:100%;border-radius:14px;padding:.8rem 1rem;border:2px solid var(--line);font-family:inherit;font-size:.95rem;margin-bottom:1.5rem">
+          <option value="normal" <%= currentUser.preferences && currentUser.preferences.fontSize === "normal" ? "selected" : "" %>>Normal</option>
+          <option value="large" <%= currentUser.preferences && currentUser.preferences.fontSize === "large" ? "selected" : "" %>>Large</option>
+          <option value="x-large" <%= currentUser.preferences && currentUser.preferences.fontSize === "x-large" ? "selected" : "" %>>Extra Large</option>
+        </select>
+
+        <button type="submit" class="auth-submit" style="max-width:300px"><i class="fa-solid fa-check"></i> Save Preferences</button>
+      </form>
+    </div>
+  </div>
+</section>
+

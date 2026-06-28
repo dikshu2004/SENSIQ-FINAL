@@ -1,0 +1,13 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="error-state">
+  <div class="cover">
+    <div class="error-card">
+      <div class="error-code"><%= err.status %></div>
+      <h1><%= err.message %></h1>
+      <p>The request could not be completed. Please return to the home page and try again.</p>
+      <a href="/home" class="hero-btn" style="display:inline-flex;margin-top:.5rem"><i class="fa-solid fa-house"></i> Back to Home</a>
+    </div>
+  </div>
+</section>
+

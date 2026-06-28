@@ -1,0 +1,195 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="dashboard-header">
+  <div class="cover">
+
+    <!-- Welcome row -->
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.8rem">
+      <div style="width:54px;height:54px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;flex-shrink:0">
+        <i class="fa-solid fa-user"></i>
+      </div>
+      <div>
+        <h1 style="font-size:1.55rem;margin:0">Welcome back, <span style="color:var(--gold)"><%= user.username %></span>!</h1>
+        <p style="margin:0;color:var(--text-soft);font-size:.92rem"><i class="fa-solid fa-tag"></i> <%= catLabel %></p>
+      </div>
+    </div>
+
+    <!-- ── Stat cards ── -->
+    <div class="dash-stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem">
+
+      <!-- Overall progress ring -->
+      <div class="dash-stat" style="flex-direction:column;align-items:center;gap:.5rem;padding:1.2rem">
+        <div style="position:relative;width:80px;height:80px">
+          <svg viewBox="0 0 36 36" style="width:80px;height:80px;transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="3"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--gold)" stroke-width="3"
+              stroke-dasharray="<%= overallPct %> <%= 100 - overallPct %>"
+              stroke-linecap="round"/>
+          </svg>
+          <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;color:var(--gold)"><%= overallPct %>%</span>
+        </div>
+        <div class="dash-stat-label" style="text-align:center">Overall Progress</div>
+      </div>
+
+      <div class="dash-stat">
+        <i class="fa-solid fa-book-open"></i>
+        <div>
+          <div class="dash-stat-value"><%= totalCourses %></div>
+          <div class="dash-stat-label">Courses</div>
+        </div>
+      </div>
+
+      <div class="dash-stat">
+        <i class="fa-solid fa-circle-check" style="color:#10b981"></i>
+        <div>
+          <div class="dash-stat-value" style="color:#10b981"><%= totalCompleted %></div>
+          <div class="dash-stat-label">Completed</div>
+        </div>
+      </div>
+
+      <div class="dash-stat">
+        <i class="fa-solid fa-spinner" style="color:var(--gold)"></i>
+        <div>
+          <div class="dash-stat-value" style="color:var(--gold)"><%= inProgress %></div>
+          <div class="dash-stat-label">In Progress</div>
+        </div>
+      </div>
+
+      <div class="dash-stat">
+        <i class="fa-solid fa-circle" style="color:var(--text-soft)"></i>
+        <div>
+          <div class="dash-stat-value" style="color:var(--text-soft)"><%= notStarted %></div>
+          <div class="dash-stat-label">Not Started</div>
+        </div>
+      </div>
+
+      <div class="dash-stat">
+        <i class="fa-solid fa-check-double" style="color:var(--blue)"></i>
+        <div>
+          <div class="dash-stat-value" style="color:var(--blue)"><%= completedLessonsAll %>/<%= totalLessonsAll %></div>
+          <div class="dash-stat-label">Lessons Done</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="dash-section">
+  <div class="cover">
+
+    <!-- ── Assistive Tools ── -->
+    <h2><i class="fa-solid fa-toolbox" style="color:var(--blue)"></i> Assistive Tools</h2>
+    <div class="dash-tools">
+      <a href="/tools/speech-to-text" class="dash-tool">
+        <div class="dash-tool-icon stt"><i class="fa-solid fa-microphone"></i></div>
+        <div><h4>Speech to Text</h4><p>Convert your voice to text in real-time</p></div>
+      </a>
+      <a href="/tools/text-to-speech" class="dash-tool">
+        <div class="dash-tool-icon tts"><i class="fa-solid fa-volume-high"></i></div>
+        <div><h4>Text to Speech</h4><p>Listen to any text content read aloud</p></div>
+      </a>
+      <a href="/tools/text-to-sign" class="dash-tool">
+        <div class="dash-tool-icon t2s"><i class="fa-solid fa-hands-asl-interpreting"></i></div>
+        <div><h4>Text to Sign Language</h4><p>Convert text to ISL fingerspelling</p></div>
+      </a>
+    </div>
+
+    <!-- ── Course Progress ── -->
+    <h2 style="margin-top:2rem"><i class="fa-solid fa-graduation-cap" style="color:var(--blue)"></i> Your Courses</h2>
+
+    <% if (courseStats.length === 0) { %>
+      <div style="text-align:center;padding:3rem;color:var(--text-soft)">
+        <i class="fa-solid fa-book-open" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:.4"></i>
+        <p>No courses available for your category yet.</p>
+        <a href="/home" class="demo-btn" style="margin-top:1rem">Browse All <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+    <% } else { %>
+    <div class="course-grid">
+      <% courseStats.forEach(stat => {
+           const { course, pct, totalLessons, completedLessons, remainingLessons, status } = stat;
+           const catLink = dtype !== "none" ? dtype : (course.category[0] || "deaf");
+           const statusColor = status === "completed" ? "#10b981" : status === "in-progress" ? "var(--gold)" : "var(--text-soft)";
+           const statusIcon  = status === "completed" ? "fa-circle-check" : status === "in-progress" ? "fa-spinner" : "fa-circle";
+           const statusLabel = status === "completed" ? "Completed" : status === "in-progress" ? "In Progress" : "Not Started";
+           const btnLabel    = status === "completed" ? "Review" : status === "in-progress" ? "Continue" : "Start Learning";
+      %>
+        <div class="course-card reveal">
+
+          <!-- Status badge -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+            <div class="course-card-icon" style="margin:0"><i class="fa-solid <%= course.icon %>"></i></div>
+            <span style="
+              font-size:.75rem;font-weight:700;
+              padding:.2rem .65rem;border-radius:20px;
+              background:<%= status === 'completed' ? 'rgba(16,185,129,.15)' : status === 'in-progress' ? 'rgba(var(--gold-rgb,230,180,40),.15)' : 'rgba(255,255,255,.07)' %>;
+              color:<%= statusColor %>;border:1px solid <%= statusColor %>;
+            ">
+              <i class="fa-solid <%= statusIcon %>"></i> <%= statusLabel %>
+            </span>
+          </div>
+
+          <h3><%= course.title %></h3>
+          <p><%= course.description.substring(0, 100) %>...</p>
+
+          <!-- Meta -->
+          <div class="course-card-meta">
+            <span><i class="fa-solid fa-clock"></i> <%= course.estimatedDuration %></span>
+            <span><i class="fa-solid fa-signal"></i> <%= course.difficulty %></span>
+            <span><i class="fa-solid fa-book"></i> <%= totalLessons %> lessons</span>
+          </div>
+
+          <!-- ── Lesson progress breakdown ── -->
+          <div style="
+            background:rgba(255,255,255,.05);
+            border:1px solid rgba(255,255,255,.08);
+            border-radius:10px;
+            padding:.7rem .9rem;
+            margin:.8rem 0;
+            font-size:.83rem;
+          ">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <span style="color:var(--text-soft)">Progress</span>
+              <strong style="color:<%= statusColor %>"><%= pct %>%</strong>
+            </div>
+
+            <!-- Progress bar -->
+            <div style="background:rgba(255,255,255,.1);border-radius:6px;height:8px;overflow:hidden;margin-bottom:.6rem">
+              <div style="
+                height:100%;width:<%= pct %>%;
+                background:<%= status === 'completed' ? 'linear-gradient(90deg,#10b981,#34d399)' : status === 'in-progress' ? 'linear-gradient(90deg,var(--gold),#fbbf24)' : 'rgba(255,255,255,.2)' %>;
+                border-radius:6px;transition:width .6s ease;
+              "></div>
+            </div>
+
+            <!-- Lesson counts -->
+            <div style="display:flex;gap:1rem;flex-wrap:wrap">
+              <span style="color:#10b981">
+                <i class="fa-solid fa-check-circle"></i>
+                <strong><%= completedLessons %></strong> Completed
+              </span>
+              <span style="color:var(--text-soft)">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <strong><%= remainingLessons %></strong> Remaining
+              </span>
+              <span style="color:var(--blue)">
+                <i class="fa-solid fa-layer-group"></i>
+                <strong><%= totalLessons %></strong> Total
+              </span>
+            </div>
+          </div>
+
+          <a href="/category/<%= catLink %>/course/<%= course._id %>" class="card-btn">
+            <%= btnLabel %> <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <div style="margin-top:2rem;text-align:center">
+      <a href="/dashboard/profile" class="demo-btn"><i class="fa-solid fa-user-pen"></i> Edit Profile & Preferences</a>
+    </div>
+
+  </div>
+</section>

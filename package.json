@@ -1,0 +1,35 @@
+{
+  "name": "sensiq",
+  "version": "1.0.0",
+  "description": "Accessible e-learning platform built with Express, EJS, MongoDB, and Passport.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "accessibility",
+    "education",
+    "express",
+    "ejs",
+    "passport"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "connect-flash": "^0.1.1",
+    "dotenv": "^17.4.2",
+    "ejs": "^5.0.1",
+    "ejs-mate": "^4.0.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "mongoose": "^6.13.9",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^9.0.1",
+    "nodemon": "^3.1.14",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^7.1.2"
+  }
+}

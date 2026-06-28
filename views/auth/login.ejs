@@ -1,0 +1,30 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="auth-shell">
+  <div class="auth-blob-gold"></div>
+  <div class="auth-blob-teal"></div>
+  <div class="cover">
+    <div class="auth-card">
+      <div class="auth-panel auth-panel-dark">
+        <span class="eyebrow eyebrow-dark">Welcome Back</span>
+        <h1>Sign in to continue learning.</h1>
+        <p>Access your SensiQ account and continue with your preferred accessibility pathway.</p>
+        <a href="/home/signup" class="auth-link"><i class="fa-solid fa-arrow-right"></i> Create a new account</a>
+      </div>
+
+      <div class="auth-panel auth-panel-form">
+        <h2>Log In</h2>
+        <form action="/home/login" method="post">
+          <label class="form-label" for="username">Username</label>
+          <input id="username" class="form-control" type="text" name="username" placeholder="Enter your username" required>
+
+          <label class="form-label" for="password">Password</label>
+          <input id="password" class="form-control" type="password" name="password" placeholder="Enter your password" required>
+
+          <button type="submit" class="auth-submit">Log In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+

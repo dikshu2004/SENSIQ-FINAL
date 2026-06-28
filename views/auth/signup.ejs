@@ -1,0 +1,43 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="auth-shell">
+  <div class="auth-blob-gold"></div>
+  <div class="auth-blob-teal"></div>
+  <div class="cover">
+    <div class="auth-card">
+      <div class="auth-panel auth-panel-dark">
+        <span class="eyebrow eyebrow-dark">Join SensiQ</span>
+        <h1>Create an account for inclusive, flexible learning.</h1>
+        <p>Register to unlock personalised access to accessible study flows, assistive tools, and learning pathways tailored to your needs.</p>
+        <a href="/home/login" class="auth-link"><i class="fa-solid fa-arrow-right"></i> Already have an account?</a>
+      </div>
+
+      <div class="auth-panel auth-panel-form">
+        <h2>Create Account</h2>
+        <form action="/home/signup" method="post">
+          <label class="form-label" for="username">Username</label>
+          <input id="username" class="form-control" type="text" name="username" placeholder="Choose a username" required>
+
+          <label class="form-label" for="email">Email</label>
+          <input id="email" class="form-control" type="email" name="email" placeholder="Enter your email" required>
+
+          <label class="form-label" for="password">Password</label>
+          <input id="password" class="form-control" type="password" name="password" placeholder="Create a password" required>
+
+          <label class="form-label" for="disabilityType">I identify as</label>
+          <select id="disabilityType" class="form-control" name="disabilityType">
+            <option value="none">Select your learning category (optional)</option>
+            <option value="deaf">Deaf Learner</option>
+            <option value="mute">Mute Learner</option>
+            <option value="visually_impaired">Visually Impaired Learner</option>
+            <option value="deaf_mute">Deaf & Mute Learner</option>
+            <option value="mute_visually_impaired">Mute & Visually Impaired Learner</option>
+          </select>
+
+          <button type="submit" class="auth-submit">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
