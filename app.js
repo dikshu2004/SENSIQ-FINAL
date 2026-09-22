@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const mongoose = require("mongoose");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const cors = require("cors");
@@ -58,8 +59,17 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 /* Session & Passport Authentication */
+const sessionStore = MongoStore.create({
+    mongoUrl: DB_URL,
+    touchAfter: 24 * 3600,
+    crypto: {
+        secret: SESSION_SECRET,
+    },
+});
+
 app.use(
     session({
+        store: sessionStore,
         secret: SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
