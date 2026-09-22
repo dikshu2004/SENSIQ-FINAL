@@ -23,7 +23,7 @@ app.use(cors({
 }));
 
 const PORT = Number(process.env.PORT) || 3001;
-const DB_URL = process.env.MONGODB_URI || process.env.MONGO_URL || "mongodb://127.0.0.1:27017/sensiq";
+const DB_URL = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.MONGO_URL || "mongodb://127.0.0.1:27017/sensiq";
 const SESSION_SECRET = process.env.SESSION_SECRET || "sensiq-secret-key-2026-secure";
 
 mongoose.set('strictQuery', true);
