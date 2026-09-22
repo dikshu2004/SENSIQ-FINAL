@@ -100,9 +100,10 @@ router.post("/api/stt", express.json({ limit: "20mb" }), async (req, res) => {
         /* Gemini models to try in order */
         const MODELS = [
             "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-3-flash-preview",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
-            "gemini-2.5-flash-lite",
         ];
 
         const safeMime = (mimeType || "audio/webm").split(";")[0];
@@ -128,7 +129,7 @@ router.post("/api/stt", express.json({ limit: "20mb" }), async (req, res) => {
         let lastError  = "";
 
         for (const model of MODELS) {
-            const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
             try {
                 const r    = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 const data = await r.json();

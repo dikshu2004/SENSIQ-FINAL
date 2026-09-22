@@ -11,7 +11,6 @@ const GEMINI_KEY  = process.env.GEMINI_API_KEY  || "";
 const OPENAI_KEY  = process.env.OPENAI_API_KEY  || "";
 const AI_PROVIDER = (process.env.AI_PROVIDER || "gemini").toLowerCase();
 
-/* System context so the AI knows it's inside SensiQ */
 const SYSTEM_PROMPT = `You are SensiQ Assistant, a helpful AI embedded in SensiQ — an inclusive e-learning platform built for Deaf, Mute, and Visually Impaired learners. 
 
 SensiQ offers:
@@ -23,15 +22,18 @@ SensiQ offers:
 Answer every user question clearly and helpfully. For platform questions, give specific SensiQ guidance. For general knowledge questions (coding, science, math, etc.), answer fully. Keep responses concise but complete. Use bullet points where helpful.`;
 
 /* ── Gemini handler — tries multiple models as fallbacks ── */
-async function askGemini(userMessage) {
+async function askGemini(userMessage, apiKey) {
   const fetch = (await import("node-fetch")).default;
 
-  // Models in priority order — if one is rate-limited, try the next
+  // Models in priority order — tested and verified
   const MODELS = [
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
+    "gemini-3.7-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
     "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
   ];
 
   const body = {
@@ -43,7 +45,7 @@ async function askGemini(userMessage) {
 
   let lastError = "";
   for (const model of MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -59,8 +61,12 @@ async function askGemini(userMessage) {
         continue;
       }
       if (!res.ok) {
-        lastError = data.error?.message || "unknown error";
+        lastError = data.error?.message || `Status ${res.status}`;
         console.warn(`[Gemini] ${model} error ${res.status}: ${lastError}`);
+        // If API key is invalid or quota exceeded, stop trying further models
+        if (data.error?.message?.includes("API key not valid") || data.error?.status === "INVALID_ARGUMENT") {
+          throw new Error(data.error.message || "Invalid Gemini API Key");
+        }
         continue;
       }
 
@@ -71,6 +77,9 @@ async function askGemini(userMessage) {
       }
     } catch (err) {
       lastError = err.message;
+      if (err.message?.includes("API key not valid") || err.message?.includes("Invalid Gemini API Key")) {
+        throw err;
+      }
       console.warn(`[Gemini] ${model} threw: ${err.message}`);
     }
   }
@@ -83,7 +92,7 @@ async function askGemini(userMessage) {
 }
 
 /* ── OpenAI handler ── */
-async function askOpenAI(userMessage) {
+async function askOpenAI(userMessage, apiKey) {
   const fetch = (await import("node-fetch")).default;
   const url = "https://api.openai.com/v1/chat/completions";
 
@@ -101,7 +110,7 @@ async function askOpenAI(userMessage) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + OPENAI_KEY
+      "Authorization": "Bearer " + apiKey
     },
     body: JSON.stringify(body)
   });
@@ -122,35 +131,43 @@ router.post("/api/chat", express.json(), async (req, res) => {
     return res.status(400).json({ error: "Message is required." });
   }
 
+  const geminiKey  = (process.env.GEMINI_API_KEY || "").trim();
+  const openAiKey  = (process.env.OPENAI_API_KEY || "").trim();
+  const aiProvider = (process.env.AI_PROVIDER || "gemini").toLowerCase();
+
   try {
     let reply;
 
-    if (AI_PROVIDER === "openai" && OPENAI_KEY && OPENAI_KEY !== "your_openai_api_key_here") {
+    if (aiProvider === "openai" && openAiKey && openAiKey !== "your_openai_api_key_here") {
       try {
-        reply = await askOpenAI(message.trim());
+        reply = await askOpenAI(message.trim(), openAiKey);
       } catch (err) {
         console.warn("OpenAI failed, falling back to Gemini:", err.message);
-        reply = await askGemini(message.trim());
+        if (geminiKey && geminiKey !== "your_gemini_api_key_here") {
+          reply = await askGemini(message.trim(), geminiKey);
+        } else {
+          throw err;
+        }
       }
-    } else if (GEMINI_KEY && GEMINI_KEY !== "your_gemini_api_key_here") {
+    } else if (geminiKey && geminiKey !== "your_gemini_api_key_here") {
       try {
-        reply = await askGemini(message.trim());
+        reply = await askGemini(message.trim(), geminiKey);
       } catch (err) {
         if (err.message === "RATE_LIMIT") {
           return res.json({
             reply: "⏳ I'm temporarily rate-limited by Google's free tier. Please wait a minute and try again, or ask a shorter question!"
           });
         }
-        console.warn("Gemini failed, falling back to OpenAI:", err.message);
-        if (OPENAI_KEY && OPENAI_KEY !== "your_openai_api_key_here") {
-          reply = await askOpenAI(message.trim());
+        if (openAiKey && openAiKey !== "your_openai_api_key_here") {
+          console.warn("Gemini failed, falling back to OpenAI:", err.message);
+          reply = await askOpenAI(message.trim(), openAiKey);
         } else {
           throw err;
         }
       }
     } else {
       return res.json({
-        reply: "⚠️ AI is not configured yet. Please add your GEMINI_API_KEY in the .env file."
+        reply: "⚠️ AI is not configured yet. Please make sure your GEMINI_API_KEY is placed in the `.env` file (not .env.example) and restart the server."
       });
     }
 
@@ -159,7 +176,7 @@ router.post("/api/chat", express.json(), async (req, res) => {
   } catch (err) {
     console.error("Chat API error:", err.message);
     res.status(500).json({
-      reply: "Sorry, I'm having trouble connecting to AI right now. Please try again in a moment."
+      reply: `Sorry, I'm having trouble connecting to AI (${err.message}). Please make sure your GEMINI_API_KEY in .env is a valid key from Google AI Studio (starts with AIzaSy...) and restart the server.`
     });
   }
 });
