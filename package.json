@@ -1,0 +1,37 @@
+{
+  "name": "sensiq",
+  "version": "1.0.0",
+  "description": "Accessible e-learning platform built with React, Express, MongoDB, and Passport.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "build": "npm install --prefix client && npm run build --prefix client",
+    "build:client": "npm run build --prefix client",
+    "postinstall": "npm install --prefix client",
+    "dev": "nodemon app.js",
+    "client": "npm run dev --prefix client"
+  },
+  "keywords": [
+    "accessibility",
+    "education",
+    "express",
+    "react",
+    "passport"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "mongoose": "^6.13.9",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^9.0.1",
+    "nodemon": "^3.1.14",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^7.1.2"
+  }
+}
